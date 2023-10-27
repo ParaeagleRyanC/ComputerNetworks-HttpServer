@@ -54,6 +54,9 @@ def get_header(code):
 
 
 def is_request_file_exist(request_file):
+    if request_file == "/":
+        request_file = DEFAULT_PAGE
+    logging.info(f"Checking if {root_folder + request_file} exists...")
     return os.path.isfile(root_folder + request_file)
 
 
