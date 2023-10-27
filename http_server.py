@@ -16,6 +16,8 @@ COMMON_HEADER = "content-Length: "
 METHOD_NOT_ALLOWED = "HTTP/1.1 405 Method Not Allowed\r\n" + COMMON_HEADER
 SUCCESS = "HTTP/1.1 200 OK\r\n" + COMMON_HEADER
 NOT_FOUND = "HTTP/1.1 404 Page Not Found\r\n" + COMMON_HEADER
+NOT_FOUND_PAGE = "www/404.html"
+DEFAULT_PAGE = "/page.html"
 
 
 def send_response(conn, file_path, header):
@@ -23,13 +25,13 @@ def send_response(conn, file_path, header):
     # only deal with file if file_path is given
     if file_path:
         # header part
-        file_size = os.path.getsize(root_folder + file_path)
+        file_size = os.path.getsize(file_path)
         logging.info(f"File size is: {file_size}")
         response_header = header + str(file_size) + END_OF_HEADER_OR_REQUEST
         conn.send(response_header.encode())
 
         # actual file to return to client
-        f = open(root_folder + file_path, "rb")
+        f = open(file_path, "rb")
         # loop until EOF is reached
         while True:
             file_content = f.read(DEFAULT_RECEIVE_SIZE)
@@ -60,24 +62,25 @@ def process_request(conn, request):
     info = first_line.split(" ")
     method = info[0]
     request_file = info[1]
+    logging.info(f"Requested file is: {request_file}")
 
     # return 405 Method Not Allowed
     if method != "GET":
         send_response(conn, 0, get_header(405))
         return
 
-    # check if the reqeusted file is the default file
-    if request_file == "/":
-        send_response(conn, "/page.html", get_header(200))
-        return
-
     # check if requested file exists
     if not is_request_file_exist(request_file):
-        send_response(conn, "/404.html", get_header(404))
+        send_response(conn, NOT_FOUND_PAGE, get_header(404))
+        return
+
+    # check if the reqeusted file is the default file
+    if request_file == "/":
+        send_response(conn, root_folder + DEFAULT_PAGE, get_header(200))
         return
 
     # otherwise return the requested file
-    send_response(conn, request_file, get_header(200))
+    send_response(conn, root_folder + request_file, get_header(200))
 
 
 # function to run non-stop until KeyboardInterrupt
